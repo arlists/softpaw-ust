@@ -225,6 +225,7 @@ def train():
         cfg.data.synthetic_text_samples = 5_000
         cfg.data.quickdraw_samples_per_category = 500
         cfg.training.epochs = 5
+        cfg.training.batch_size = 8
         cfg.training.warmup_steps = 200
         cfg.training.recognition_loss_start_step = 200
         cfg.training.val_interval = 500
@@ -238,6 +239,7 @@ def train():
         cfg.data.synthetic_text_samples = 50_000
         cfg.data.quickdraw_samples_per_category = 5_000
         cfg.training.epochs = 10
+        cfg.training.batch_size = 16
         cfg.training.warmup_steps = 500
         cfg.training.recognition_loss_start_step = 500
         cfg.training.val_interval = 2000
