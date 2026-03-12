@@ -13,14 +13,17 @@
 #        bash scripts/vast_launch.sh
 #
 # Options:
+#   bash scripts/vast_launch.sh --quick        # ~30 min validation run
+#   bash scripts/vast_launch.sh --medium       # ~8-12 hr run
 #   bash scripts/vast_launch.sh --multi-gpu    # Use all GPUs on the instance
 #   bash scripts/vast_launch.sh --resume checkpoints/step_10000.pt
 #   bash scripts/vast_launch.sh --batch_size 64
 #   bash scripts/vast_launch.sh --skip-data    # Skip dataset download
 #
-# Estimated times (A100 80GB):
-#   Dataset download: ~10 min (QuickDraw + fonts + corpus)
-#   Training (40 epochs, 4M pages): ~8-12 hours
+# Estimated times (RTX 4090):
+#   --quick:   ~30 min   (50K pages, 5 epochs, ~$0.15)
+#   --medium:  ~8-12 hrs (500K pages, 10 epochs, ~$3)
+#   (default): ~150+ hrs (4M pages, 40 epochs, ~$40+)
 # ============================================================================
 
 set -e

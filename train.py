@@ -55,6 +55,10 @@ def parse_args():
     parser.add_argument("--no_wandb", action="store_true", help="Disable wandb logging")
     parser.add_argument("--data_dir", type=str, default="./datasets", help="Dataset root")
     parser.add_argument("--compile", action="store_true", help="Use torch.compile")
+    parser.add_argument("--quick", action="store_true",
+                        help="Quick validation run (~30 min on 4090): 50K pages, 5 epochs")
+    parser.add_argument("--medium", action="store_true",
+                        help="Medium run (~8-12 hrs on 4090): 500K pages, 10 epochs")
     return parser.parse_args()
 
 
@@ -213,6 +217,33 @@ def train():
         cfg.data.mathwriting_dir = os.path.join(args.data_dir, "mathwriting")
         cfg.data.iam_online_dir = os.path.join(args.data_dir, "iam_online")
         cfg.data.quickdraw_dir = os.path.join(args.data_dir, "quickdraw")
+
+    # Preset overrides (--quick / --medium)
+    if args.quick:
+        cfg.data.num_train_pages = 50_000
+        cfg.data.num_val_pages = 5_000
+        cfg.data.synthetic_text_samples = 5_000
+        cfg.data.quickdraw_samples_per_category = 500
+        cfg.training.epochs = 5
+        cfg.training.warmup_steps = 200
+        cfg.training.recognition_loss_start_step = 200
+        cfg.training.val_interval = 500
+        cfg.training.save_interval = 500
+        cfg.training.log_interval = 20
+        cfg.training.num_workers = 4
+        print("  Mode: QUICK (~30 min on 4090)")
+    elif args.medium:
+        cfg.data.num_train_pages = 500_000
+        cfg.data.num_val_pages = 20_000
+        cfg.data.synthetic_text_samples = 50_000
+        cfg.data.quickdraw_samples_per_category = 5_000
+        cfg.training.epochs = 10
+        cfg.training.warmup_steps = 500
+        cfg.training.recognition_loss_start_step = 500
+        cfg.training.val_interval = 2000
+        cfg.training.save_interval = 2000
+        cfg.training.log_interval = 50
+        print("  Mode: MEDIUM (~8-12 hrs on 4090)")
 
     # Set seed
     torch.manual_seed(cfg.seed + rank)
