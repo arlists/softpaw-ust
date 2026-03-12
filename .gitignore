@@ -1,0 +1,32 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Training artifacts
+checkpoints/
+datasets/
+wandb/
+*.pt
+*.onnx
+*.mlmodel
+*.mlpackage
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Env
+.env
+*.env
+venv/
+.venv/

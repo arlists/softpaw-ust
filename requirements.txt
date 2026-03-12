@@ -1,0 +1,14 @@
+torch>=2.2.0
+torchvision>=0.17.0
+numpy>=1.24.0
+scipy>=1.11.0
+pyyaml>=6.0
+wandb>=0.16.0
+tqdm>=4.66.0
+lxml>=4.9.0
+coremltools>=7.0
+onnx>=1.15.0
+onnxruntime>=1.17.0
+matplotlib>=3.8.0
+Pillow>=10.0.0
+ndjson>=0.3.1
