@@ -224,6 +224,8 @@ def train():
         cfg.data.num_val_pages = 5_000
         cfg.data.synthetic_text_samples = 5_000
         cfg.data.quickdraw_samples_per_category = 500
+        cfg.data.stroke.max_strokes_per_page = 256   # pages have ~30-150 strokes, not 512
+        cfg.data.stroke.max_points_per_stroke = 64    # synth strokes are 10-30 pts, not 128
         cfg.training.epochs = 5
         cfg.training.batch_size = 8
         cfg.training.warmup_steps = 200
@@ -232,6 +234,7 @@ def train():
         cfg.training.save_interval = 500
         cfg.training.log_interval = 20
         cfg.training.num_workers = 4
+        args.compile = True  # torch.compile for free speedup
         print("  Mode: QUICK (~30 min on 4090)")
     elif args.medium:
         cfg.data.num_train_pages = 500_000
