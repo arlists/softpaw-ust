@@ -58,6 +58,10 @@ class DataConfig:
     # Synthetic gestures
     synthetic_gestures_per_type: int = 100_000
 
+    # Decoder sequence lengths (controls text/math decoder cost)
+    max_text_len: int = 256
+    max_math_len: int = 256
+
     stroke: StrokeConfig = field(default_factory=StrokeConfig)
 
 

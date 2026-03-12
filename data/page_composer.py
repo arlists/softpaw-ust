@@ -579,8 +579,8 @@ class ComposedPageDataset(Dataset):
         max_strokes = self.cfg.stroke.max_strokes_per_page
         max_points = self.cfg.stroke.max_points_per_stroke
         max_groups = 32  # from GroupDecoderConfig.num_queries
-        max_text_len = 256
-        max_math_len = 256
+        max_text_len = self.cfg.max_text_len
+        max_math_len = self.cfg.max_math_len
 
         # Prepare stroke data
         model_input = prepare_page_for_model(page, max_strokes, max_points)

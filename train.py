@@ -226,6 +226,10 @@ def train():
         cfg.data.quickdraw_samples_per_category = 500
         cfg.data.stroke.max_strokes_per_page = 256   # pages have ~30-150 strokes, not 512
         cfg.data.stroke.max_points_per_stroke = 64    # synth strokes are 10-30 pts, not 128
+        cfg.data.max_text_len = 48                    # most synth text < 48 chars
+        cfg.data.max_math_len = 48                    # cap decoder cost for quick run
+        cfg.model.text_decoder.max_length = 48
+        cfg.model.math_decoder.max_length = 48
         cfg.training.epochs = 5
         cfg.training.batch_size = 8
         cfg.training.warmup_steps = 200
