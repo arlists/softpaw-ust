@@ -252,6 +252,8 @@ def train():
         cfg.training.val_interval = 2000
         cfg.training.save_interval = 2000
         cfg.training.log_interval = 50
+        cfg.training.num_workers = 4
+        args.compile = True
         print("  Mode: MEDIUM (~8-12 hrs on 4090)")
 
     # Set seed

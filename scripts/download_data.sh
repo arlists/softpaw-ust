@@ -30,18 +30,41 @@ if [ -d "$MATHWRITING_DIR" ] && [ "$(ls -A $MATHWRITING_DIR 2>/dev/null)" ]; the
     echo "  Already exists at $MATHWRITING_DIR, skipping."
 else
     mkdir -p "$MATHWRITING_DIR"
-    echo "  Downloading MathWriting dataset..."
-    echo "  NOTE: The MathWriting dataset needs to be downloaded from Google Cloud Storage."
-    echo "  Visit: https://github.com/google-research/google-research/tree/master/mathwriting"
-    echo "  Download the InkML files and extract to: $MATHWRITING_DIR"
-    echo ""
-    echo "  Expected structure:"
-    echo "    $MATHWRITING_DIR/train/*.inkml"
-    echo "    $MATHWRITING_DIR/val/*.inkml"
-    echo "    $MATHWRITING_DIR/test/*.inkml"
-    echo ""
-    echo "  If available via gsutil:"
-    echo "    gsutil -m cp -r gs://mathwriting_data/* $MATHWRITING_DIR/"
+    echo "  Downloading MathWriting dataset from Google Cloud Storage..."
+
+    # Install gsutil if not available
+    if ! command -v gsutil &> /dev/null; then
+        echo "  Installing gsutil..."
+        pip install -q gsutil 2>/dev/null || pip install -q google-cloud-storage 2>/dev/null || true
+    fi
+
+    if command -v gsutil &> /dev/null; then
+        echo "  Downloading via gsutil (this may take 10-20 min)..."
+        gsutil -m cp -r "gs://mathwriting_data/*" "$MATHWRITING_DIR/" 2>&1 | tail -5
+        echo "  Downloaded $(find "$MATHWRITING_DIR" -name '*.inkml' 2>/dev/null | wc -l) InkML files"
+    else
+        echo "  WARNING: gsutil not available. Trying direct download..."
+        # Fallback: try gcloud anonymous access
+        pip install -q gcloud-aio-storage 2>/dev/null || true
+        python3 -c "
+import subprocess, os
+print('  Attempting anonymous GCS download...')
+splits = ['train', 'validation', 'test']
+for split in splits:
+    dest = os.path.join('$MATHWRITING_DIR', split)
+    os.makedirs(dest, exist_ok=True)
+result = subprocess.run(['gsutil', '-m', 'cp', '-r', 'gs://mathwriting_data/*', '$MATHWRITING_DIR/'],
+                       capture_output=True, text=True)
+if result.returncode != 0:
+    print('  gsutil failed. Manual download required:')
+    print('    pip install gsutil')
+    print('    gsutil -m cp -r gs://mathwriting_data/* $MATHWRITING_DIR/')
+" 2>/dev/null || echo "  Fallback failed. See manual instructions below."
+        echo ""
+        echo "  Manual download instructions:"
+        echo "    pip install gsutil"
+        echo "    gsutil -m cp -r gs://mathwriting_data/* $MATHWRITING_DIR/"
+    fi
 fi
 
 # ---------------------------------------------------------------------------
