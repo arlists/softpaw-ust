@@ -241,20 +241,29 @@ def train():
         args.compile = True  # torch.compile for free speedup
         print("  Mode: QUICK (~30 min on 4090)")
     elif args.medium:
-        cfg.data.num_train_pages = 500_000
-        cfg.data.num_val_pages = 20_000
+        # Data: use all real datasets, 200K composed pages, 5 epochs = 1M page views
+        cfg.data.num_train_pages = 200_000
+        cfg.data.num_val_pages = 10_000
         cfg.data.synthetic_text_samples = 50_000
         cfg.data.quickdraw_samples_per_category = 5_000
-        cfg.training.epochs = 10
+        # Tensor sizing: trim padding to match real data (>95% coverage)
+        cfg.data.stroke.max_strokes_per_page = 256   # real pages rarely exceed 200 strokes
+        cfg.data.stroke.max_points_per_stroke = 96    # real strokes rarely exceed 80 points
+        cfg.data.max_text_len = 128                   # real text labels < 128 chars
+        cfg.data.max_math_len = 128                   # real LaTeX < 128 tokens
+        cfg.model.text_decoder.max_length = 128
+        cfg.model.math_decoder.max_length = 128
+        # Training
+        cfg.training.epochs = 5
         cfg.training.batch_size = 32
         cfg.training.warmup_steps = 500
         cfg.training.recognition_loss_start_step = 500
         cfg.training.val_interval = 2000
         cfg.training.save_interval = 2000
         cfg.training.log_interval = 50
-        cfg.training.num_workers = 4
+        cfg.training.num_workers = 8
         args.compile = True
-        print("  Mode: MEDIUM (~2 days on A100)")
+        print("  Mode: MEDIUM (~5-12 hrs on A100)")
 
     # Set seed
     torch.manual_seed(cfg.seed + rank)
