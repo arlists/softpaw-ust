@@ -211,10 +211,11 @@ class SoftPawLoss(nn.Module):
             if len(pred_idx) == 0:
                 continue
 
-            pred = mask_logits[b, pred_idx].sigmoid()  # (n_matched, S)
+            pred_logit = mask_logits[b, pred_idx]  # (n_matched, S)
             target = gt_masks[b, gt_idx]  # (n_matched, S)
 
-            total_bce += F.binary_cross_entropy(pred, target, reduction="mean")
+            total_bce += F.binary_cross_entropy_with_logits(pred_logit, target, reduction="mean")
+            pred = pred_logit.sigmoid()  # for Dice loss below
             total_dice += dice_loss(pred, target)
             count += 1
 

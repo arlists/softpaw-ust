@@ -93,19 +93,20 @@ class HungarianMatcher:
             gt_cls = gt_classes[b, active_gt]  # (n_gt,)
             cost_class = -pred_probs[:, gt_cls]  # (Q, n_gt)
 
-            # Mask BCE cost
-            pred_masks = mask_logits[b].sigmoid()  # (Q, S)
+            # Mask BCE cost (use logits version for AMP safety)
             target_masks = gt_masks[b, active_gt]  # (n_gt, S)
 
             # Pairwise BCE: (Q, n_gt)
             # Expand for pairwise computation
-            pred_expanded = pred_masks.unsqueeze(1).expand(-1, n_gt, -1)  # (Q, n_gt, S)
+            pred_expanded = mask_logits[b].unsqueeze(1).expand(-1, n_gt, -1)  # (Q, n_gt, S)
             tgt_expanded = target_masks.unsqueeze(0).expand(Q, -1, -1)  # (Q, n_gt, S)
-            cost_mask_bce = F.binary_cross_entropy(
+            cost_mask_bce = F.binary_cross_entropy_with_logits(
                 pred_expanded.reshape(-1, S),
                 tgt_expanded.reshape(-1, S),
                 reduction="none",
             ).reshape(Q, n_gt, S).mean(dim=-1)  # (Q, n_gt)
+
+            pred_masks = mask_logits[b].sigmoid()  # (Q, S) — for Dice computation
 
             # Mask Dice cost
             dice = dice_score(pred_masks, target_masks)  # (Q, n_gt)
