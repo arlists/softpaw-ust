@@ -246,7 +246,7 @@ def train():
         cfg.data.synthetic_text_samples = 50_000
         cfg.data.quickdraw_samples_per_category = 5_000
         cfg.training.epochs = 10
-        cfg.training.batch_size = 16
+        cfg.training.batch_size = 32
         cfg.training.warmup_steps = 500
         cfg.training.recognition_loss_start_step = 500
         cfg.training.val_interval = 2000
@@ -254,7 +254,7 @@ def train():
         cfg.training.log_interval = 50
         cfg.training.num_workers = 4
         args.compile = True
-        print("  Mode: MEDIUM (~8-12 hrs on 4090)")
+        print("  Mode: MEDIUM (~2 days on A100)")
 
     # Set seed
     torch.manual_seed(cfg.seed + rank)
