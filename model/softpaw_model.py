@@ -142,18 +142,18 @@ class SoftPawUST(nn.Module):
         batch: Dict[str, torch.Tensor],
         device: torch.device,
     ) -> torch.Tensor:
-        """Run text decoder on GT text groups.
-
-        For each group labeled as "text", gather its stroke embeddings
-        and decode to text.
-        """
+        """Run text decoder on GT text groups (batched for speed)."""
         B, Q = batch["group_classes"].shape
-        S = contextualized.size(1)
         T = batch["text_targets"].size(2)
         V = self.cfg.text_decoder.vocab_size
+        D = contextualized.size(-1)
 
-        # Initialize output
         text_logits = torch.zeros(B, Q, T, V, device=device)
+
+        # Collect all text groups across the batch
+        all_strokes = []
+        all_targets = []
+        indices = []
 
         for b in range(B):
             for q in range(Q):
@@ -161,27 +161,34 @@ class SoftPawUST(nn.Module):
                     continue
                 if batch["text_lengths"][b, q] == 0:
                     continue
-
-                # Gather stroke embeddings for this group using GT mask
-                stroke_mask = batch["group_masks"][b, q]  # (S,)
-                active_indices = (stroke_mask > 0.5).nonzero(as_tuple=True)[0]
-
-                if len(active_indices) == 0:
+                stroke_mask = batch["group_masks"][b, q]
+                active = (stroke_mask > 0.5).nonzero(as_tuple=True)[0]
+                if len(active) == 0:
                     continue
+                all_strokes.append(contextualized[b, active])
+                all_targets.append(batch["text_targets"][b, q])
+                indices.append((b, q))
 
-                group_strokes = contextualized[b, active_indices].unsqueeze(0)  # (1, n, D)
-                group_stroke_mask = torch.ones(1, len(active_indices), device=device)
+        if not indices:
+            return text_logits
 
-                # Teacher forcing: use GT targets (shifted right for input)
-                target = batch["text_targets"][b, q].unsqueeze(0)  # (1, T)
+        # Pad strokes to max group size and run one batched forward pass
+        max_n = max(s.size(0) for s in all_strokes)
+        N = len(indices)
+        padded_strokes = torch.zeros(N, max_n, D, device=device)
+        padded_masks = torch.zeros(N, max_n, device=device)
+        for i, s in enumerate(all_strokes):
+            padded_strokes[i, :s.size(0)] = s
+            padded_masks[i, :s.size(0)] = 1.0
 
-                logits = self.text_decoder(
-                    stroke_embeddings=group_strokes,
-                    stroke_mask=group_stroke_mask,
-                    target_ids=target,
-                )  # (1, T, V)
+        logits = self.text_decoder(
+            stroke_embeddings=padded_strokes,
+            stroke_mask=padded_masks,
+            target_ids=torch.stack(all_targets),
+        )
 
-                text_logits[b, q] = logits.squeeze(0)
+        for i, (b, q) in enumerate(indices):
+            text_logits[b, q] = logits[i]
 
         return text_logits
 
@@ -191,12 +198,17 @@ class SoftPawUST(nn.Module):
         batch: Dict[str, torch.Tensor],
         device: torch.device,
     ) -> torch.Tensor:
-        """Run math decoder on GT math groups."""
+        """Run math decoder on GT math groups (batched for speed)."""
         B, Q = batch["group_classes"].shape
         T = batch["math_targets"].size(2)
         V = self.cfg.math_decoder.vocab_size
+        D = contextualized.size(-1)
 
         math_logits = torch.zeros(B, Q, T, V, device=device)
+
+        all_strokes = []
+        all_targets = []
+        indices = []
 
         for b in range(B):
             for q in range(Q):
@@ -204,25 +216,33 @@ class SoftPawUST(nn.Module):
                     continue
                 if batch["math_lengths"][b, q] == 0:
                     continue
-
                 stroke_mask = batch["group_masks"][b, q]
-                active_indices = (stroke_mask > 0.5).nonzero(as_tuple=True)[0]
-
-                if len(active_indices) == 0:
+                active = (stroke_mask > 0.5).nonzero(as_tuple=True)[0]
+                if len(active) == 0:
                     continue
+                all_strokes.append(contextualized[b, active])
+                all_targets.append(batch["math_targets"][b, q])
+                indices.append((b, q))
 
-                group_strokes = contextualized[b, active_indices].unsqueeze(0)
-                group_stroke_mask = torch.ones(1, len(active_indices), device=device)
+        if not indices:
+            return math_logits
 
-                target = batch["math_targets"][b, q].unsqueeze(0)
+        max_n = max(s.size(0) for s in all_strokes)
+        N = len(indices)
+        padded_strokes = torch.zeros(N, max_n, D, device=device)
+        padded_masks = torch.zeros(N, max_n, device=device)
+        for i, s in enumerate(all_strokes):
+            padded_strokes[i, :s.size(0)] = s
+            padded_masks[i, :s.size(0)] = 1.0
 
-                logits = self.math_decoder(
-                    stroke_embeddings=group_strokes,
-                    stroke_mask=group_stroke_mask,
-                    target_ids=target,
-                )
+        logits = self.math_decoder(
+            stroke_embeddings=padded_strokes,
+            stroke_mask=padded_masks,
+            target_ids=torch.stack(all_targets),
+        )
 
-                math_logits[b, q] = logits.squeeze(0)
+        for i, (b, q) in enumerate(indices):
+            math_logits[b, q] = logits[i]
 
         return math_logits
 
