@@ -259,6 +259,10 @@ def train():
     # Set seed
     torch.manual_seed(cfg.seed + rank)
 
+    # Free A100/Ampere+ speedups
+    torch.set_float32_matmul_precision("high")  # TF32 tensor cores (~3x faster f32 matmuls)
+    torch.backends.cudnn.benchmark = True        # Auto-tune conv algorithms
+
     device = torch.device(f"cuda:{local_rank}" if torch.cuda.is_available() else "cpu")
 
     if is_main:
